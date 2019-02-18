@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Ball in a hole</title>
+  <link rel="stylesheet" href="../vendor/normalize.css">
+  <script src="../vendor/lib.js"></script>
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="scene"></canvas>
+  <script>
+    const canvas = _.getEl('#scene')
+    const ctx = canvas.getContext('2d')
+
+    const resizeCanvas = (e) => {
+      canvas.width = innerWidth
+      canvas.height = innerHeight
+    }
+
+    const resetCtx = () => {
+      ctx.fillStyle = 'black'
+    }
+
+    // Declare enums
+    const GameState = {
+      pending: 'pending',
+      playing: 'playing',
+      success: 'success',
+    }
+
+    const Color = {
+      player: 'blue',
+      pending: 'red',
+      inactive: 'gray',
+      done: 'green',
+    }
+
+    // App state object
+    const game = {
+      state: GameState.pending,
+      startedAt: Date.now(),
+      endedAt: Date.now(),
+    }
+
+    // Some helper functions
+    const drawCircle = (drawable) => {
+      ctx.beginPath()
+      ctx.arc(drawable.pos.x, drawable.pos.y, drawable.radius, 0, 2 * Math.PI, false)
+      ctx.fillStyle = drawable.color
+      ctx.fill()
+      ctx.closePath()
+    }
+
+    const collide = (firstCircle, secondCircle) => {
+      const x1 = firstCircle.pos.x
+      const x2 = secondCircle.pos.x
+      const y1 = firstCircle.pos.y
+      const y2 = secondCircle.pos.y
+
+      const distance = _.sqrt(_.pow(x1 - x2, 2) + _.pow(y1 - y2, 2))
+      return distance <= firstCircle.radius + secondCircle.radius
+    }
+
+    
+    const calcVelocityVector = (e) => {
+      const { beta, gamma } = e
+      // X velocity
+      if (beta > 10) {
+        velocityVector.x = -1.5
+      } else if (beta < -10) {
+        velocityVector.x = 1.5
+      } else {
+        velocityVector.x = 0
+      }
+
+      // Y velocity
+      if (gamma > 10) {
+        velocityVector.y = -1.5
+      } else if (gamma < -10) {
+        velocityVector.y = 1.5
+      } else {
+        velocityVector.y = 0
+      }
+    }
+
+    const velocityVector = {
+      x: 0,
+      y: 0,
+    }
+
+    // Declare drawables
+    const player = {
+      pos: {
+        x: innerWidth / 2,
+        y: innerHeight / 2,
+      },
+      radius: 10,
+      color: Color.player,
+    }
+
+    const hole1 = {
+      pos: {
+        x: innerWidth / 4,
+        y: innerHeight / 4,
+      },
+      radius: 15,
+      color: Color.pending,
+      onCollision: () => {
+        if (hole1.color === Color.pending) {
+          hole1.color = Color.done
+          hole2.color = Color.pending
+        }
+      },
+    }
+
+    const hole2 = {
+      pos: {
+        x: 3 * innerWidth / 4,
+        y: innerHeight / 4,
+      },
+      radius: 15,
+      color: Color.inactive,
+      onCollision: () => {
+        if (hole2.color === Color.pending) {
+          hole2.color = Color.done
+          hole3.color = Color.pending
+        }
+      },
+    }
+
+    const hole3 = {
+      pos: {
+        x: 3 * innerWidth / 4,
+        y: 3 * innerHeight / 4,
+      },
+      radius: 15,
+      color: Color.inactive,
+      onCollision: () => {
+        if (hole3.color === Color.pending) {
+          hole3.color = Color.done
+          hole4.color = Color.pending
+        }
+      },
+    }
+
+    const hole4 = {
+      pos: {
+        x: innerWidth / 4,
+        y: 3 * innerHeight / 4,
+      },
+      radius: 15,
+      color: Color.inactive,
+      onCollision: () => {
+        if (hole4.color === Color.pending) {
+          hole4.color = Color.done
+          game.endedAt = Date.now()
+          game.state = GameState.success
+        }
+      },
+    }
+
+    // ^End declare drawables
+
+    // Game loop
+    function render() {
+      if (game.state === GameState.pending) {
+        ctx.fillRect(0, 0, innerWidth, innerHeight)
+        ctx.font = '20px Roboto'
+        ctx.fillStyle = 'white'
+        const text = 'Tap to start'
+        ctx.fillText(text, innerWidth / 3, innerHeight / 2)
+      }
+      if (game.state === GameState.playing) {
+        ctx.fillStyle = 'white'
+        ctx.fillRect(0, 0, innerWidth, innerHeight)
+        player.pos.x += velocityVector.x
+        player.pos.y += velocityVector.y
+        _.each([player, hole1, hole2, hole3, hole4], drawCircle)
+        // Handle collision
+        _.each([hole1, hole2, hole3, hole4], (x) => {
+          if (collide(player, x)) {
+            x.onCollision()
+          }
+        })
+      }
+      if (game.state === GameState.success) {
+        ctx.fillRect(0, 0, innerWidth, innerHeight)
+        ctx.font = '20px Roboto'
+        ctx.fillStyle = 'white'
+        const score = 1200 - _.ceil((game.endedAt - game.startedAt) / 1000)
+        const text = `You won! Score: ${score}`
+        ctx.fillText(text, innerWidth / 3, innerHeight / 2)
+      }
+      resetCtx()
+      requestAnimationFrame(render)
+    }
+
+    const initialize = () => {
+      resizeCanvas()
+      render()
+    }
+
+    // Resize canvas to fill whole screen on resize
+    _.on('resize', window, resizeCanvas)
+    _.on('deviceorientation', window, calcVelocityVector)
+
+    _.on('click', document, (e) => {
+      if (game.state === GameState.pending) {
+        game.state = GameState.playing
+        game.startedAt = Date.now()
+      }
+    })
+    _.on('load', window, initialize)
+  </script>
+</body>
+
+</html>
