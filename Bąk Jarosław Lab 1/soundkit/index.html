@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>SoundKit</title>
+  <link rel="stylesheet" href="../vendor/roboto.css">
+  <link rel="stylesheet" href="../vendor/normalize.css">
+  <link rel="stylesheet" href="../vendor/milligram.css">
+  <script src="../vendor/lib.js"></script>
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    .button-black {
+      background-color: black;
+      border-color: black;
+    }
+
+    .button-black.button-clear,
+    .button-black.button-outline {
+      background-color: transparent;
+      color: black;
+    }
+
+    .button-black.button-clear {
+      border-color: transparent;
+    }
+
+    .button-red {
+      background-color: red;
+      border-color: red;
+    }
+
+    .button-red.button-clear,
+    .button-red.button-outline {
+      background-color: transparent;
+      color: red;
+    }
+
+    .button-red.button-clear {
+      border-color: transparent;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="row">
+      <div class="column">
+        <button class="button button-outline button-black">A</button>
+      </div>
+      <div class="column">
+        <button class="button button-outline button-black">S</button>
+      </div>
+      <div class="column">
+        <button class="button button-outline button-black">D</button>
+      </div>
+      <div class="column">
+        <button class="button button-outline button-black">F</button>
+      </div>
+      <div class="column">
+        <button class="button button-outline button-black">G</button>
+      </div>
+      <div class="column">
+        <button class="button button-outline button-black">H</button>
+      </div>
+      <div class="column">
+        <button class="button button-outline button-black">J</button>
+      </div>
+      <div class="column">
+        <button class="button button-outline button-black">K</button>
+      </div>
+    </div>
+    <div class="row">
+      <div class="column"><button class="button-outline button-red" id="record-1">Record</button></div>
+      <div class="column"><button class="button-outline button-red" id="record-2">Record</button></div>
+      <div class="column"><button class="button-outline button-red" id="record-3">Record</button></div>
+      <div class="column"><button class="button-outline button-red" id="record-4">Record</button></div>
+    </div>
+  </div>
+
+  <script>
+    // Map audio instances to keyboard keys
+    const soundmap = {
+      a: new Audio('./sounds/boom.wav'),
+      s: new Audio('./sounds/clap.wav'),
+      d: new Audio('./sounds/hihat.wav'),
+      f: new Audio('./sounds/kick.wav'),
+      g: new Audio('./sounds/openhat.wav'),
+      h: new Audio('./sounds/ride.wav'),
+      j: new Audio('./sounds/snare.wav'),
+      k: new Audio('./sounds/tink.wav'),
+    }
+
+    // Recording channel state enum
+    const ChannelState = {
+      empty: 'empty',
+      recording: 'recording',
+      recorded: 'recorded',
+    }
+    // Init chanels states
+    const channels = [
+      { state: ChannelState.empty, data: [] },
+      { state: ChannelState.empty, data: [] },
+      { state: ChannelState.empty, data: [] },
+      { state: ChannelState.empty, data: [] },
+    ]
+
+    // For each record button handle click according to corresponding channel state
+    _.each([1,2,3,4], (n, i) => {
+      const el = _.getEl(`#record-${n}`)
+      _.on('click', el, () => {
+        const channel = channels[i]
+        if (channel.state === ChannelState.empty) {
+          el.innerText = 'Stop recording'
+          channel.startedAt = Date.now()
+          channel.state = ChannelState.recording
+        } else if (channel.state === ChannelState.recording) {
+          el.innerText = 'Play'
+          channel.state = ChannelState.recorded
+        } else {
+          _.each(channel.data, (x) => {
+            setTimeout(() => {
+              x.sound.play()
+            }, x.delay)
+          })
+        }
+      })
+    })
+
+    // If predefined key pressed play sound
+    _.on('keydown', window, (e) => {
+      const sound = soundmap[e.key]
+      if (sound) {
+        sound.play()
+        _.each(channels, (x) => {
+          // Also if a channel is recording, record that sound
+          if (x.state === ChannelState.recording) {
+            x.data.push({
+              sound,
+              delay: Date.now() - x.startedAt
+            })
+          }
+        })
+      }
+    })
+  </script>
+</body>
+
+</html>
