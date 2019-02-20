@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>NotePocket</title>
+  <link rel="stylesheet" href="../vendor/roboto.css">
+  <link rel="stylesheet" href="../vendor/normalize.css">
+  <link rel="stylesheet" href="../vendor/milligram.css">
+  <script src="../vendor/lib.js"></script>
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="row">
+      <h1>Note Pocket</h1>
+    </div>
+    <div class="row">
+      <div class="column-25">
+        <form>
+          <fieldset>
+            <label for="title">Title</label>
+            <input type="text" name="title">
+            <label for="content">Content</label>
+            <textarea name="content" cols="30" rows="10"></textarea>
+            <label for="color">Color</label>
+            <input type="color" name="color">
+            <div class="button" id="create">Create</div>
+          </fieldset>
+        </form>
+      </div>
+      <div class="column">
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Content</th>
+              <th>Created at</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <script>
+    const loadCollection = () => JSON.parse(window.localStorage.getItem('collection')) || []
+    const collection = loadCollection()
+    const saveCollection = (data = collection) => window.localStorage.setItem('collection', JSON.stringify(data))
+    const renderCollection = () => {
+      const tbody = _.getEl('tbody')
+      // Clear list
+      while (tbody.firstChild) {
+        tbody.removeChild(tbody.firstChild)
+      }
+
+      // Render table row
+      const renderRow = (x) => {
+        const tr = _.createEl('tr')
+        tr.style.color = x.color
+        tr.innerHTML = `<td>${x.title}</td><td>${x.content}</td><td>${new Date(x.createdAt).toLocaleString()}</td>`
+        
+        // Pin/unpin button
+        const td = _.createEl('td')
+        const switchButton = _.createEl('button')
+        switchButton.innerText = x.favorite ? 'Unpin' : 'Pin'
+        _.on('click', switchButton, () => {
+          x.favorite = !x.favorite
+          saveCollection()
+          renderCollection()
+        })
+        td.appendChild(switchButton)
+        tr.appendChild(td)
+        tbody.appendChild(tr)
+      }
+
+      // Firstly render favourite notes
+      _.each(collection.filter(x => x.favorite), renderRow)
+      _.each(collection.filter(x => !x.favorite), renderRow)
+    }
+
+    // On click add new model to collection
+    _.on('click', _.getEl('#create'), () => {
+      const title = _.getEl('input[name=title]')
+      const content = _.getEl('textarea[name=content]')
+      const color = _.getEl('input[name=color]')
+
+      collection.push({
+        title: title.value,
+        content: content.value,
+        color: color.value,
+        createdAt: Date.now(),
+        favorite: false
+      })
+      title.value = ''
+      content.value = ''
+      color.value = '#000000'
+      saveCollection()
+      renderCollection()
+    })
+
+    _.on('load', window, renderCollection)
+  </script>
+</body>
+
+</html>
