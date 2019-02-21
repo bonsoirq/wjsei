@@ -55,6 +55,7 @@
 
     function applyValue (event) {
       const imageData = new ImageData(canvas.width, canvas.height)
+      // Please don't ask me how it works, I have no idea
       for (let i = 0; i < currentData.data.length; i += 4) {
         let red = currentData.data[i]
         let green = currentData.data[i + 1]

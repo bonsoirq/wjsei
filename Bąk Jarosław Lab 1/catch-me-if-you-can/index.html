@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Catch me if you can</title>
+  <link rel="stylesheet" href="../vendor/roboto.css">
+  <link rel="stylesheet" href="../vendor/normalize.css">
+  <link rel="stylesheet" href="../vendor/milligram.css">
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDzYO26OwzVCLqMGtyfxpgJeSMdDb_MQSE&callback=initMap"
+    async defer></script>
+  <script src="../vendor/lib.js"></script>
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    #messages {
+      height: 75vh;
+      overflow: scroll;
+    }
+    #map {
+      height: 100vh;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="row">
+    </div>
+    <div class="row">
+      <div class="column-25">
+        <table>
+          <thead>
+            <tr>
+              <th>Chat</th>
+            </tr>
+          </thead>
+        </table>
+        <div id="messages"></div>
+        <form>
+          <fieldset>
+            <label for="message">Type a message:</label>
+            <input type="text" name="message">
+            <div class="button" id="send">Send</div>
+          </fieldset>
+        </form>
+      </div>
+      <div class="column">
+        <div id="map">
+
+        </div>
+      </div>
+    </div>
+    <script>
+      function initMap() {
+        window.map = new google.maps.Map(document.getElementById('map'), {
+          center: {lat: -34.397, lng: 150.644},
+          zoom: 8
+        });
+      }
+      const internalKey = 'f42aa6c8-3600-11e9-b210-d663bd873d93'
+      const socket = new WebSocket('ws://91.121.6.192:8010')
+      const send = _.getEl('#send')
+
+      _.on('click', send, () => {
+        const message = _.getEl('#message')
+        const msg = message.value
+        socket.send({internalKey, msg})
+        // message.value = ''
+      })
+
+      _.on('message', socket, e => {
+        console.log(e.data)
+      })
+
+      _.on('load', window, initMap)
+    </script>
+</body>
+
+</html>
